@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Paiements - Gestion Locative{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title mb-0"><i class="bi bi-credit-card"></i> Paiements</h1>
+    <a href="{{ url_for('ajouter_paiement') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Enregistrer un paiement
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if paiements %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Locataire</th>
+                        <th>Bien</th>
+                        <th>Catégorie</th>
+                        <th>Mois concerné</th>
+                        <th>Montant</th>
+                        <th>Mode</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for paiement in paiements %}
+                        <tr>
+                            <td>{{ paiement.date_paiement.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                <a href="{{ url_for('detail_locataire', id=paiement.locataire.id) }}">
+                                    {{ paiement.locataire.nom_complet }}
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('detail_bien', id=paiement.locataire.bien.id) }}">
+                                    {{ paiement.locataire.bien.nom }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if paiement.categorie == 'loyer' %}
+                                    <span class="badge bg-primary">Loyer</span>
+                                {% elif paiement.categorie == 'eau_assainissement' %}
+                                    <span class="badge bg-info">Eau/Assain.</span>
+                                {% elif paiement.categorie == 'ordures_menageres' %}
+                                    <span class="badge bg-success">Ordures</span>
+                                {% elif paiement.categorie == 'taxe_fonciere' %}
+                                    <span class="badge bg-warning text-dark">Taxe fonc.</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ paiement.categorie }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ paiement.mois_concerne }}</td>
+                            <td><strong class="text-success">{{ paiement.montant }} €</strong></td>
+                            <td>
+                                {% if paiement.mode_paiement == 'virement' %}
+                                    <span class="badge bg-info">Virement</span>
+                                {% elif paiement.mode_paiement == 'cheque' %}
+                                    <span class="badge bg-warning">Chèque</span>
+                                {% elif paiement.mode_paiement == 'especes' %}
+                                    <span class="badge bg-secondary">Espèces</span>
+                                {% elif paiement.mode_paiement == 'prelevement' %}
+                                    <span class="badge bg-dark">Prélèvement</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('generer_quittance', locataire_id=paiement.locataire.id, mois=paiement.mois_concerne) }}" 
+                                   class="btn btn-sm btn-outline-info" target="_blank" title="Générer quittance">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                </a>
+                                <a href="{{ url_for('modifier_paiement', id=paiement.id) }}" 
+                                   class="btn btn-sm btn-outline-secondary" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form action="{{ url_for('supprimer_paiement', id=paiement.id) }}" method="POST"
+                                      style="display: inline;" onsubmit="return confirm(&quot;Voulez-vous vraiment supprimer ce paiement de {{ paiement.montant }} &euro; du {{ paiement.date_paiement.strftime('%d/%m/%Y') }} ? Cette action est irr\u00e9versible.&quot;);">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="mt-3 p-3 bg-light rounded">
+                <div class="row text-center">
+                    <div class="col">
+                        <strong>Total des paiements : {{ paiements|sum(attribute='montant') }} €</strong>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-credit-card display-4 text-muted"></i>
+                <h4 class="mt-3">Aucun paiement enregistré</h4>
+                <p class="text-muted">Les paiements de vos locataires apparaîtront ici.</p>
+                <a href="{{ url_for('ajouter_paiement') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Enregistrer un paiement
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

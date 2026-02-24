@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}{{ bien.nom }} - Gestion Locative{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title mb-0">
+        {% if bien.type_bien == 'appartement' %}
+            <i class="bi bi-house-door"></i>
+        {% else %}
+            <i class="bi bi-shop"></i>
+        {% endif %}
+        {{ bien.nom }}
+    </h1>
+    <div>
+        <a href="{{ url_for('modifier_bien', id=bien.id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-pencil"></i> Modifier
+        </a>
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <i class="bi bi-trash"></i> Supprimer
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Informations du bien
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="40%">Type</th>
+                        <td>
+                            {% if bien.type_bien == 'appartement' %}
+                                <span class="badge badge-appartement">Appartement</span>
+                            {% else %}
+                                <span class="badge badge-local">Local commercial</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Adresse</th>
+                        <td>{{ bien.adresse }}</td>
+                    </tr>
+                    <tr>
+                        <th>Surface</th>
+                        <td>{{ bien.surface ~ ' m²' if bien.surface else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Charges mensuelles</th>
+                        <td>{{ bien.charges_mensuelles }} €</td>
+                    </tr>
+                    <tr>
+                        <th>Date d'acquisition</th>
+                        <td>{{ bien.date_acquisition.strftime('%d/%m/%Y') if bien.date_acquisition else '-' }}</td>
+                    </tr>
+                </table>
+                
+                {% if bien.description %}
+                    <hr>
+                    <h6>Description</h6>
+                    <p class="text-muted">{{ bien.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-person"></i> Locataire actuel</span>
+                {% if not bien.locataire_actuel %}
+                    <a href="{{ url_for('ajouter_locataire') }}" class="btn btn-sm btn-success">
+                        <i class="bi bi-person-plus"></i> Ajouter
+                    </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if bien.locataire_actuel %}
+                    {% set loc = bien.locataire_actuel %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                             style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            {{ loc.prenom[0] }}{{ loc.nom[0] }}
+                        </div>
+                        <div>
+                            <h5 class="mb-0">{{ loc.nom_complet }}</h5>
+                            <small class="text-muted">
+                                <i class="bi bi-envelope"></i> {{ loc.email or '-' }}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <th>Téléphone</th>
+                            <td>{{ loc.telephone or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Début du bail</th>
+                            <td>{{ loc.date_debut_bail.strftime('%d/%m/%Y') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Fin du bail</th>
+                            <td>{{ loc.date_fin_bail.strftime('%d/%m/%Y') if loc.date_fin_bail else 'Indéterminée' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Loyer HC</th>
+                            <td>{{ loc.loyer_mensuel }} €</td>
+                        </tr>
+                        <tr>
+                            <th>Loyer CC</th>
+                            <td><strong>{{ loc.loyer_total }} €</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Dépôt de garantie</th>
+                            <td>{{ loc.depot_garantie }} €</td>
+                        </tr>
+                    </table>
+                    
+                    <a href="{{ url_for('detail_locataire', id=loc.id) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye"></i> Voir le profil complet
+                    </a>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-person-x display-4 text-muted"></i>
+                        <p class="mt-2 text-muted">Ce bien n'a pas de locataire actuellement.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Historique des locataires -->
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-clock-history"></i> Historique des locataires
+    </div>
+    <div class="card-body">
+        {% if bien.locataires %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Locataire</th>
+                        <th>Période</th>
+                        <th>Loyer</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loc in bien.locataires %}
+                        <tr>
+                            <td>{{ loc.nom_complet }}</td>
+                            <td>
+                                {{ loc.date_debut_bail.strftime('%d/%m/%Y') }}
+                                {% if loc.date_fin_bail %}
+                                    - {{ loc.date_fin_bail.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    - En cours
+                                {% endif %}
+                            </td>
+                            <td>{{ loc.loyer_total }} €</td>
+                            <td>
+                                {% if loc.actif %}
+                                    <span class="badge bg-success">Actif</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Ancien</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('detail_locataire', id=loc.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-muted text-center mb-0">Aucun locataire enregistré pour ce bien.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer le bien <strong>{{ bien.nom }}</strong> ?</p>
+                <p class="text-danger"><small>Cette action est irréversible et supprimera également tous les locataires et paiements associés.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form action="{{ url_for('supprimer_bien', id=bien.id) }}" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Supprimer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=65.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gestion-locative"
+version = "1.0.0"
+description = "Application de gestion locative"
+requires-python = ">=3.9"
+dependencies = [
+    "Flask>=3.0.0",
+    "Flask-SQLAlchemy>=3.1.1",
+    "python-dateutil>=2.8.2",
+]
+
+[project.scripts]
+gestion-locative = "gestion_locative.cli:main"
+
+[tool.setuptools]
+packages = ["gestion_locative"]
+
+[tool.setuptools.package-data]
+gestion_locative = ["templates/**/*.html"]

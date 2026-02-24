@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord - Gestion Locative{% endblock %}
+
+{% block content %}
+<h1 class="page-title"><i class="bi bi-speedometer2"></i> Tableau de bord</h1>
+
+<!-- Cartes statistiques -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value">{{ biens|length }}</div>
+                    <div class="stat-label">Biens</div>
+                </div>
+                <i class="bi bi-building stat-icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value">{{ locataires_actifs|length }}</div>
+                    <div class="stat-label">Locataires actifs</div>
+                </div>
+                <i class="bi bi-people stat-icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value">{{ "%.2f"|format(revenus_mensuels) }} €</div>
+                    <div class="stat-label">Loyers attendus/mois</div>
+                </div>
+                <i class="bi bi-cash-stack stat-icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value">{{ "%.2f"|format(total_percu) }} €</div>
+                    <div class="stat-label">Perçu ce mois</div>
+                </div>
+                <i class="bi bi-wallet2 stat-icon"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Alertes loyers en retard -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-exclamation-triangle text-warning"></i> Loyers en retard</span>
+                <span class="badge bg-danger">{{ loyers_en_retard|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if loyers_en_retard %}
+                    {% for loc in loyers_en_retard %}
+                        <div class="alert alert-retard d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>{{ loc.nom_complet }}</strong><br>
+                                <small class="text-muted">{{ loc.bien.nom }} - {{ loc.loyer_total }} €</small>
+                            </div>
+                            <a href="{{ url_for('ajouter_paiement') }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-plus"></i> Enregistrer
+                            </a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center mb-0">
+                        <i class="bi bi-check-circle text-success"></i> Tous les loyers sont à jour !
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Liste des biens -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-building"></i> Mes biens</span>
+                <a href="{{ url_for('ajouter_bien') }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus"></i> Ajouter
+                </a>
+            </div>
+            <div class="card-body">
+                {% if biens %}
+                    {% for bien in biens %}
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                            <div>
+                                <h6 class="mb-1">
+                                    {{ bien.nom }}
+                                    {% if bien.type_bien == 'appartement' %}
+                                        <span class="badge badge-appartement">Appartement</span>
+                                    {% else %}
+                                        <span class="badge badge-local">Local commercial</span>
+                                    {% endif %}
+                                </h6>
+                                <small class="text-muted">{{ bien.adresse }}</small>
+                            </div>
+                            <div class="text-end">
+                                {% if bien.locataire_actuel %}
+                                    <span class="badge bg-success">Loué</span><br>
+                                    <small>{{ bien.locataire_actuel.nom_complet }}</small>
+                                {% else %}
+                                    <span class="badge bg-secondary">Vacant</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center mb-0">
+                        Aucun bien enregistré. <a href="{{ url_for('ajouter_bien') }}">Ajouter un bien</a>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions rapides -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-lightning"></i> Actions rapides
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('ajouter_bien') }}" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="bi bi-building"></i> Ajouter un bien
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('ajouter_locataire') }}" class="btn btn-outline-success w-100 mb-2">
+                            <i class="bi bi-person-plus"></i> Ajouter un locataire
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('ajouter_paiement') }}" class="btn btn-outline-info w-100 mb-2">
+                            <i class="bi bi-credit-card"></i> Enregistrer un paiement
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('liste_quittances') }}" class="btn btn-outline-warning w-100 mb-2">
+                            <i class="bi bi-file-earmark-text"></i> Générer une quittance
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

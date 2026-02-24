@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Quittance de loyer - {{ mois_nom }} {{ annee }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 3px double #333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 24pt;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        
+        .header h2 {
+            font-size: 14pt;
+            font-weight: normal;
+            color: #666;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .info-box {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            width: 200px;
+        }
+        
+        .montant-box {
+            background-color: #e8f4f8;
+            border: 2px solid #3498db;
+            padding: 20px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .montant-label {
+            font-size: 14pt;
+            color: #2c3e50;
+        }
+        
+        .montant-value {
+            font-size: 28pt;
+            font-weight: bold;
+            color: #27ae60;
+            margin: 10px 0;
+        }
+        
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .detail-table th, .detail-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        
+        .detail-table th {
+            background-color: #f8f9fa;
+        }
+        
+        .detail-table .text-right {
+            text-align: right;
+        }
+        
+        .detail-table .total-row {
+            background-color: #e8f4f8;
+            font-weight: bold;
+        }
+        
+        .detail-table .subtotal-row {
+            background-color: #f0f0f0;
+        }
+        
+        .signature-section {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .signature-box {
+            width: 45%;
+            text-align: center;
+        }
+        
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-top: 60px;
+            padding-top: 5px;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 10pt;
+            color: #666;
+            text-align: center;
+        }
+        
+        .status-paid {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .status-unpaid {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .paiement-detail {
+            font-size: 10pt;
+            color: #666;
+        }
+        
+        @media print {
+            body {
+                padding: 0;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="margin-bottom: 20px; padding: 10px; background: #f0f0f0; text-align: center;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 14pt; cursor: pointer;">
+            🖨️ Imprimer / Sauvegarder en PDF
+        </button>
+    </div>
+
+    <div class="header">
+        <h1>QUITTANCE DE LOYER ET CHARGES</h1>
+        <h2>{{ mois_nom }} {{ annee }}</h2>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">BAILLEUR</div>
+        <div class="info-box">
+            {% if bailleur %}
+                <p><strong>Nom :</strong> {{ bailleur.nom }}</p>
+                <p><strong>Adresse :</strong> {{ bailleur.adresse_complete }}</p>
+                {% if bailleur.telephone %}
+                <p><strong>Téléphone :</strong> {{ bailleur.telephone }}</p>
+                {% endif %}
+                {% if bailleur.email %}
+                <p><strong>Email :</strong> {{ bailleur.email }}</p>
+                {% endif %}
+                {% if bailleur.siret %}
+                <p><strong>SIRET :</strong> {{ bailleur.siret }}</p>
+                {% endif %}
+            {% else %}
+                <p class="text-danger"><strong>⚠ Informations non renseignées</strong></p>
+                <p class="small">Veuillez renseigner vos informations dans <a href="{{ url_for('parametres') }}" class="no-print">Paramètres</a></p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">LOCATAIRE</div>
+        <div class="info-box">
+            <p><strong>Nom :</strong> {{ locataire.nom_complet }}</p>
+            {% if locataire.email %}
+            <p><strong>Email :</strong> {{ locataire.email }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">BIEN LOUÉ</div>
+        <div class="info-box">
+            <p><strong>Désignation :</strong> {{ locataire.bien.nom }}</p>
+            <p><strong>Adresse :</strong> {{ locataire.bien.adresse }}</p>
+            {% if locataire.bien.surface %}
+            <p><strong>Surface :</strong> {{ locataire.bien.surface }} m²</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">DÉTAIL DES PAIEMENTS REÇUS</div>
+        <table class="detail-table">
+            <tr>
+                <th>Désignation</th>
+                <th>Date de paiement</th>
+                <th>Mode</th>
+                <th class="text-right">Montant</th>
+            </tr>
+            
+            {% if paiements %}
+                {% for categorie, paiements_cat in paiements_par_categorie.items() %}
+                    {% for p in paiements_cat %}
+                    <tr>
+                        <td>{{ categories_labels.get(categorie, categorie) }}</td>
+                        <td>{{ p.date_paiement.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ p.mode_paiement or '-' }}</td>
+                        <td class="text-right">{{ "%.2f"|format(p.montant) }} €</td>
+                    </tr>
+                    {% endfor %}
+                {% endfor %}
+                <tr class="total-row">
+                    <th colspan="3">TOTAL REÇU</th>
+                    <th class="text-right">{{ "%.2f"|format(total_paiements) }} €</th>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #e74c3c;">
+                        Aucun paiement enregistré pour ce mois
+                    </td>
+                </tr>
+            {% endif %}
+        </table>
+    </div>
+    
+    <!-- Rappel des montants attendus -->
+    <div class="section">
+        <div class="section-title">RAPPEL DES MONTANTS CONTRACTUELS</div>
+        <table class="detail-table">
+            <tr>
+                <th>Désignation</th>
+                <th class="text-right">Montant mensuel</th>
+            </tr>
+            <tr>
+                <td>Loyer (hors charges)</td>
+                <td class="text-right">{{ "%.2f"|format(locataire.loyer_mensuel) }} €</td>
+            </tr>
+            <tr>
+                <td>Provisions pour charges</td>
+                <td class="text-right">{{ "%.2f"|format(locataire.bien.charges_mensuelles) }} €</td>
+            </tr>
+            <tr class="subtotal-row">
+                <th>Total loyer + charges</th>
+                <th class="text-right">{{ "%.2f"|format(locataire.loyer_total) }} €</th>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="montant-box">
+        <div class="montant-label">Total acquitté pour {{ mois_nom }} {{ annee }}</div>
+        <div class="montant-value">{{ "%.2f"|format(total_paiements) }} €</div>
+        {% if paiements %}
+            <p class="status-paid">✓ {{ paiements|length }} paiement(s) reçu(s)</p>
+        {% else %}
+            <p class="status-unpaid">⚠ Aucun paiement enregistré</p>
+        {% endif %}
+    </div>
+    
+    <p style="text-align: justify;">
+        Je soussigné(e), propriétaire du logement désigné ci-dessus, déclare avoir reçu de 
+        <strong>{{ locataire.nom_complet }}</strong> la somme de 
+        <strong>{{ "%.2f"|format(total_paiements) }} euros</strong>
+        au titre du paiement du loyer et des charges pour la période du 
+        <strong>1er {{ mois_nom }} {{ annee }}</strong> au 
+        <strong>{% if mois_nom in ['Janvier', 'Mars', 'Mai', 'Juillet', 'Août', 'Octobre', 'Décembre'] %}31{% elif mois_nom == 'Février' %}28{% else %}30{% endif %} {{ mois_nom }} {{ annee }}</strong>,
+        et lui en donne quittance, sous réserve de tous mes droits.
+    </p>
+    
+    <div class="signature-section">
+        <div class="signature-box">
+            <p>Fait à : {{ bailleur.ville if bailleur and bailleur.ville else '_________________' }}</p>
+            <p>Le : {{ date_generation.strftime('%d/%m/%Y') }}</p>
+        </div>
+        <div class="signature-box">
+            <p>Signature du bailleur :</p>
+            {% if bailleur and bailleur.nom %}
+                <p style="margin-top: 10px;"><strong>{{ bailleur.nom }}</strong></p>
+            {% endif %}
+            <div class="signature-line"></div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p><em>Cette quittance annule tous les reçus qui auraient pu être établis précédemment en cas de paiement partiel du montant ci-dessus.</em></p>
+        <p><em>Document à conserver sans limitation de durée (article 7-1 de la loi du 6 juillet 1989).</em></p>
+    </div>
+</body>
+</html>

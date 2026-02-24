@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Biens - Gestion Locative{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title mb-0"><i class="bi bi-building"></i> Mes biens</h1>
+    <a href="{{ url_for('ajouter_bien') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Ajouter un bien
+    </a>
+</div>
+
+<div class="row">
+    {% if biens %}
+        {% for bien in biens %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            {% if bien.type_bien == 'appartement' %}
+                                <i class="bi bi-house-door text-primary"></i>
+                            {% else %}
+                                <i class="bi bi-shop text-warning"></i>
+                            {% endif %}
+                            {{ bien.nom }}
+                        </span>
+                        {% if bien.type_bien == 'appartement' %}
+                            <span class="badge badge-appartement">Appartement</span>
+                        {% else %}
+                            <span class="badge badge-local">Local commercial</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">
+                            <i class="bi bi-geo-alt text-muted"></i> {{ bien.adresse }}
+                        </p>
+                        {% if bien.surface %}
+                            <p class="mb-2">
+                                <i class="bi bi-aspect-ratio text-muted"></i> {{ bien.surface }} m²
+                            </p>
+                        {% endif %}
+                        <p class="mb-2">
+                            <i class="bi bi-cash text-muted"></i> Charges : {{ bien.charges_mensuelles }} €/mois
+                        </p>
+                        
+                        <hr>
+                        
+                        {% if bien.locataire_actuel %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-success mb-1">Loué</span><br>
+                                    <small>
+                                        <i class="bi bi-person"></i> {{ bien.locataire_actuel.nom_complet }}<br>
+                                        <i class="bi bi-currency-euro"></i> {{ bien.locataire_actuel.loyer_total }} €/mois
+                                    </small>
+                                </div>
+                            </div>
+                        {% else %}
+                            <span class="badge bg-secondary">Vacant</span>
+                            <a href="{{ url_for('ajouter_locataire') }}" class="btn btn-sm btn-outline-success ms-2">
+                                <i class="bi bi-person-plus"></i> Ajouter locataire
+                            </a>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-white">
+                        <a href="{{ url_for('detail_bien', id=bien.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> Voir
+                        </a>
+                        <a href="{{ url_for('modifier_bien', id=bien.id) }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i> Modifier
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-building display-4 text-muted"></i>
+                    <h4 class="mt-3">Aucun bien enregistré</h4>
+                    <p class="text-muted">Commencez par ajouter votre premier bien immobilier.</p>
+                    <a href="{{ url_for('ajouter_bien') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Ajouter un bien
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

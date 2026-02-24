@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Modifier' if bien else 'Ajouter' }} un bien - Gestion Locative{% endblock %}
+
+{% block content %}
+<h1 class="page-title">
+    <i class="bi bi-building"></i> 
+    {{ 'Modifier' if bien else 'Ajouter' }} un bien
+</h1>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="nom" class="form-label">Nom du bien *</label>
+                    <input type="text" class="form-control" id="nom" name="nom" 
+                           value="{{ bien.nom if bien else '' }}" required>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="type_bien" class="form-label">Type de bien *</label>
+                    <select class="form-select" id="type_bien" name="type_bien" required>
+                        <option value="">Sélectionner...</option>
+                        <option value="appartement" {{ 'selected' if bien and bien.type_bien == 'appartement' }}>Appartement</option>
+                        <option value="local_commercial" {{ 'selected' if bien and bien.type_bien == 'local_commercial' }}>Local commercial</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="adresse" class="form-label">Adresse complète *</label>
+                <input type="text" class="form-control" id="adresse" name="adresse" 
+                       value="{{ bien.adresse if bien else '' }}" required>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="surface" class="form-label">Surface (m²)</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="surface" name="surface"
+                           value="{{ bien.surface if bien else '' }}">
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label for="charges_mensuelles" class="form-label">Charges mensuelles (€)</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="charges_mensuelles" name="charges_mensuelles"
+                           value="{{ bien.charges_mensuelles if bien else '0' }}">
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label for="date_acquisition" class="form-label">Date d'acquisition</label>
+                    <input type="date" class="form-control" id="date_acquisition" name="date_acquisition" 
+                           value="{{ bien.date_acquisition.strftime('%Y-%m-%d') if bien and bien.date_acquisition else '' }}">
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3">{{ bien.description if bien else '' }}</textarea>
+            </div>
+            
+            <hr>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('liste_biens') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Annuler
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> {{ 'Enregistrer les modifications' if bien else 'Ajouter le bien' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

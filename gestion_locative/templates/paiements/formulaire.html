@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Modifier' if paiement else 'Enregistrer' }} un paiement - Gestion Locative{% endblock %}
+
+{% block content %}
+<h1 class="page-title">
+    <i class="bi bi-credit-card"></i> {{ 'Modifier' if paiement else 'Enregistrer' }} un paiement
+</h1>
+
+<div class="card">
+    <div class="card-body">
+        {% if locataires %}
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="locataire_id" class="form-label">Locataire *</label>
+                        <select class="form-select" id="locataire_id" name="locataire_id" required>
+                            <option value="">Sélectionner un locataire...</option>
+                            {% for loc in locataires %}
+                                <option value="{{ loc.id }}" data-loyer="{{ loc.loyer_total }}"
+                                        {% if paiement and paiement.locataire_id == loc.id %}selected{% endif %}>
+                                    {{ loc.nom_complet }} - {{ loc.bien.nom }} ({{ loc.loyer_total }} €/mois)
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="categorie" class="form-label">Catégorie *</label>
+                        <select class="form-select" id="categorie" name="categorie" required>
+                            {% for value, label in categories %}
+                                <option value="{{ value }}" 
+                                        {% if (paiement and paiement.categorie == value) or (not paiement and value == 'loyer') %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="montant" class="form-label">Montant (€) *</label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" id="montant" name="montant"
+                               value="{{ paiement.montant if paiement else '' }}" required>
+                        <small class="text-muted" id="montant-help">Sélectionnez un locataire pour pré-remplir le loyer</small>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="date_paiement" class="form-label">Date du paiement *</label>
+                        <input type="date" class="form-control" id="date_paiement" name="date_paiement" 
+                               value="{{ paiement.date_paiement.strftime('%Y-%m-%d') if paiement else '' }}" required>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="mois_concerne" class="form-label">Mois concerné *</label>
+                        <input type="month" class="form-control" id="mois_concerne" name="mois_concerne" 
+                               value="{{ paiement.mois_concerne if paiement else '' }}" required>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="mode_paiement" class="form-label">Mode de paiement</label>
+                        <select class="form-select" id="mode_paiement" name="mode_paiement">
+                            <option value="">Sélectionner...</option>
+                            <option value="virement" {% if paiement and paiement.mode_paiement == 'virement' %}selected{% endif %}>Virement bancaire</option>
+                            <option value="cheque" {% if paiement and paiement.mode_paiement == 'cheque' %}selected{% endif %}>Chèque</option>
+                            <option value="especes" {% if paiement and paiement.mode_paiement == 'especes' %}selected{% endif %}>Espèces</option>
+                            <option value="prelevement" {% if paiement and paiement.mode_paiement == 'prelevement' %}selected{% endif %}>Prélèvement automatique</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="commentaire" class="form-label">Commentaire</label>
+                        <input type="text" class="form-control" id="commentaire" name="commentaire" 
+                               value="{{ paiement.commentaire if paiement else '' }}"
+                               placeholder="Notes optionnelles...">
+                    </div>
+                </div>
+                
+                <!-- Info sur les catégories -->
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> <strong>Types de paiements :</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>Loyer</strong> : Paiement mensuel du loyer</li>
+                        <li><strong>Eau et assainissement</strong> : Facture d'eau (généralement trimestrielle)</li>
+                        <li><strong>Ordures ménagères</strong> : Taxe d'enlèvement des ordures</li>
+                        <li><strong>Taxe foncière</strong> : Part locataire de la taxe foncière</li>
+                    </ul>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('liste_paiements') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Annuler
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> {{ 'Enregistrer les modifications' if paiement else 'Enregistrer le paiement' }}
+                    </button>
+                </div>
+            </form>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-exclamation-circle display-4 text-warning"></i>
+                <h4 class="mt-3">Aucun locataire actif</h4>
+                <p class="text-muted">Vous devez d'abord ajouter un locataire avant de pouvoir enregistrer des paiements.</p>
+                <a href="{{ url_for('ajouter_locataire') }}" class="btn btn-primary">
+                    <i class="bi bi-person-plus"></i> Ajouter un locataire
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Pré-remplir le montant quand un locataire est sélectionné ET que la catégorie est "loyer"
+    function updateMontant() {
+        const locataireSelect = document.getElementById('locataire_id');
+        const categorieSelect = document.getElementById('categorie');
+        const montantInput = document.getElementById('montant');
+        const montantHelp = document.getElementById('montant-help');
+        
+        const selected = locataireSelect.options[locataireSelect.selectedIndex];
+        const loyer = selected.dataset.loyer;
+        const categorie = categorieSelect.value;
+        
+        if (categorie === 'loyer' && loyer) {
+            montantInput.value = loyer;
+            montantHelp.textContent = 'Montant du loyer charges comprises';
+        } else if (montantInput.value && categorie !== 'loyer') {
+            // Ne pas effacer si l'utilisateur a déjà saisi un montant pour une autre catégorie
+        } else {
+            montantInput.value = '';
+            montantHelp.textContent = 'Entrez le montant correspondant';
+        }
+    }
+    
+    document.getElementById('locataire_id').addEventListener('change', updateMontant);
+    document.getElementById('categorie').addEventListener('change', updateMontant);
+    
+    // Pré-remplir la date du jour et le mois en cours seulement si on ajoute (pas en modification)
+    {% if not paiement %}
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date_paiement').value = today;
+    
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    document.getElementById('mois_concerne').value = currentMonth;
+    {% endif %}
+</script>
+{% endblock %}

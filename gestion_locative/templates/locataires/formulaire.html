@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Modifier' if locataire else 'Ajouter' }} un locataire - Gestion Locative{% endblock %}
+
+{% block content %}
+<h1 class="page-title">
+    <i class="bi bi-person"></i> 
+    {{ 'Modifier' if locataire else 'Ajouter' }} un locataire
+</h1>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <h5 class="mb-3 text-primary"><i class="bi bi-person-badge"></i> Informations personnelles</h5>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="prenom" class="form-label">Prénom *</label>
+                    <input type="text" class="form-control" id="prenom" name="prenom" 
+                           value="{{ locataire.prenom if locataire else '' }}" required>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label for="nom" class="form-label">Nom *</label>
+                    <input type="text" class="form-control" id="nom" name="nom" 
+                           value="{{ locataire.nom if locataire else '' }}" required>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <label for="date_naissance" class="form-label">Date de naissance</label>
+                    <input type="date" class="form-control" id="date_naissance" name="date_naissance" 
+                           value="{{ locataire.date_naissance.strftime('%Y-%m-%d') if locataire and locataire.date_naissance else '' }}">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" 
+                           value="{{ locataire.email if locataire else '' }}">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="telephone" class="form-label">Téléphone</label>
+                    <input type="tel" class="form-control" id="telephone" name="telephone" 
+                           value="{{ locataire.telephone if locataire else '' }}">
+                </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <h5 class="mb-3 text-primary"><i class="bi bi-file-earmark-text"></i> Informations du bail</h5>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="bien_id" class="form-label">Bien loué *</label>
+                    <select class="form-select" id="bien_id" name="bien_id" required>
+                        <option value="">Sélectionner un bien...</option>
+                        {% for bien in biens %}
+                            <option value="{{ bien.id }}" {{ 'selected' if locataire and locataire.bien_id == bien.id }}>
+                                {{ bien.nom }} ({{ bien.type_bien }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <label for="date_debut_bail" class="form-label">Date début du bail *</label>
+                    <input type="date" class="form-control" id="date_debut_bail" name="date_debut_bail" 
+                           value="{{ locataire.date_debut_bail.strftime('%Y-%m-%d') if locataire else '' }}" required>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <label for="date_fin_bail" class="form-label">Date fin du bail</label>
+                    <input type="date" class="form-control" id="date_fin_bail" name="date_fin_bail" 
+                           value="{{ locataire.date_fin_bail.strftime('%Y-%m-%d') if locataire and locataire.date_fin_bail else '' }}">
+                    <small class="text-muted">Laisser vide si indéterminée</small>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="loyer_mensuel" class="form-label">Loyer mensuel (€) *</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="loyer_mensuel" name="loyer_mensuel"
+                           value="{{ locataire.loyer_mensuel if locataire else '' }}" required>
+                    <small class="text-muted">Hors charges</small>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <label for="depot_garantie" class="form-label">Dépôt de garantie (€)</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="depot_garantie" name="depot_garantie"
+                           value="{{ locataire.depot_garantie if locataire else '' }}">
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <label for="jour_paiement" class="form-label">Jour de paiement</label>
+                    <input type="number" min="1" max="28" class="form-control" id="jour_paiement" name="jour_paiement" 
+                           value="{{ locataire.jour_paiement if locataire else '1' }}">
+                    <small class="text-muted">Jour du mois (1-28)</small>
+                </div>
+                
+                {% if locataire %}
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Statut</label>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="actif" name="actif" 
+                               {{ 'checked' if locataire.actif }}>
+                        <label class="form-check-label" for="actif">
+                            Locataire actif
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <hr class="my-4">
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('liste_locataires') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Annuler
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> {{ 'Enregistrer les modifications' if locataire else 'Ajouter le locataire' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}{{ locataire.nom_complet }} - Gestion Locative{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title mb-0">
+        <i class="bi bi-person"></i> {{ locataire.nom_complet }}
+        {% if locataire.actif %}
+            <span class="badge bg-success">Actif</span>
+        {% else %}
+            <span class="badge bg-secondary">Inactif</span>
+        {% endif %}
+    </h1>
+    <div>
+        <a href="{{ url_for('modifier_locataire', id=locataire.id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-pencil"></i> Modifier
+        </a>
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <i class="bi bi-trash"></i> Supprimer
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informations personnelles -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-person-badge"></i> Informations personnelles
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="40%">Nom complet</th>
+                        <td>{{ locataire.nom_complet }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email</th>
+                        <td>
+                            {% if locataire.email %}
+                                <a href="mailto:{{ locataire.email }}">{{ locataire.email }}</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Téléphone</th>
+                        <td>
+                            {% if locataire.telephone %}
+                                <a href="tel:{{ locataire.telephone }}">{{ locataire.telephone }}</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Date de naissance</th>
+                        <td>{{ locataire.date_naissance.strftime('%d/%m/%Y') if locataire.date_naissance else '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informations du bail -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-file-earmark-text"></i> Informations du bail
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="40%">Bien loué</th>
+                        <td>
+                            <a href="{{ url_for('detail_bien', id=locataire.bien.id) }}">
+                                {{ locataire.bien.nom }}
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Adresse</th>
+                        <td>{{ locataire.bien.adresse }}</td>
+                    </tr>
+                    <tr>
+                        <th>Début du bail</th>
+                        <td>{{ locataire.date_debut_bail.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fin du bail</th>
+                        <td>{{ locataire.date_fin_bail.strftime('%d/%m/%Y') if locataire.date_fin_bail else 'Indéterminée' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Loyer HC</th>
+                        <td>{{ locataire.loyer_mensuel }} €</td>
+                    </tr>
+                    <tr>
+                        <th>Charges</th>
+                        <td>{{ locataire.bien.charges_mensuelles }} €</td>
+                    </tr>
+                    <tr>
+                        <th>Loyer CC</th>
+                        <td><strong class="text-primary">{{ locataire.loyer_total }} €</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Dépôt de garantie</th>
+                        <td>{{ locataire.depot_garantie }} €</td>
+                    </tr>
+                    <tr>
+                        <th>Jour de paiement</th>
+                        <td>Le {{ locataire.jour_paiement }} du mois</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Historique des paiements -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-credit-card"></i> Historique des paiements</span>
+        <a href="{{ url_for('ajouter_paiement') }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus"></i> Enregistrer un paiement
+        </a>
+    </div>
+    <div class="card-body">
+        {% if paiements %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date du paiement</th>
+                        <th>Mois concerné</th>
+                        <th>Montant</th>
+                        <th>Mode de paiement</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for paiement in paiements %}
+                        <tr>
+                            <td>{{ paiement.date_paiement.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ paiement.mois_concerne }}</td>
+                            <td><strong>{{ paiement.montant }} €</strong></td>
+                            <td>{{ paiement.mode_paiement or '-' }}</td>
+                            <td>
+                                <a href="{{ url_for('generer_quittance', locataire_id=locataire.id, mois=paiement.mois_concerne) }}" 
+                                   class="btn btn-sm btn-outline-info" target="_blank">
+                                    <i class="bi bi-file-earmark-text"></i> Quittance
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="mt-3 text-end">
+                <strong>Total perçu : {{ paiements|sum(attribute='montant') }} €</strong>
+            </div>
+        {% else %}
+            <p class="text-muted text-center mb-0">Aucun paiement enregistré pour ce locataire.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer le locataire <strong>{{ locataire.nom_complet }}</strong> ?</p>
+                <p class="text-danger"><small>Cette action est irréversible et supprimera également tous les paiements associés.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form action="{{ url_for('supprimer_locataire', id=locataire.id) }}" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Supprimer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

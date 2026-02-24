@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Locataires - Gestion Locative{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title mb-0"><i class="bi bi-people"></i> Locataires</h1>
+    <a href="{{ url_for('ajouter_locataire') }}" class="btn btn-primary">
+        <i class="bi bi-person-plus"></i> Ajouter un locataire
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if locataires %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Locataire</th>
+                        <th>Bien</th>
+                        <th>Contact</th>
+                        <th>Loyer</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loc in locataires %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" 
+                                         style="width: 35px; height: 35px; font-size: 0.8rem;">
+                                        {{ loc.prenom[0] }}{{ loc.nom[0] }}
+                                    </div>
+                                    <div>
+                                        <strong>{{ loc.nom_complet }}</strong><br>
+                                        <small class="text-muted">
+                                            Bail depuis le {{ loc.date_debut_bail.strftime('%d/%m/%Y') }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {{ loc.bien.nom }}<br>
+                                <small class="text-muted">
+                                    {% if loc.bien.type_bien == 'appartement' %}
+                                        <span class="badge badge-appartement">Appt</span>
+                                    {% else %}
+                                        <span class="badge badge-local">Local</span>
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td>
+                                <small>
+                                    <i class="bi bi-envelope"></i> {{ loc.email or '-' }}<br>
+                                    <i class="bi bi-telephone"></i> {{ loc.telephone or '-' }}
+                                </small>
+                            </td>
+                            <td>
+                                <strong>{{ loc.loyer_total }} €</strong><br>
+                                <small class="text-muted">({{ loc.loyer_mensuel }} € + {{ loc.bien.charges_mensuelles }} € charges)</small>
+                            </td>
+                            <td>
+                                {% if loc.actif %}
+                                    <span class="badge bg-success">Actif</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactif</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('detail_locataire', id=loc.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('modifier_locataire', id=loc.id) }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-people display-4 text-muted"></i>
+                <h4 class="mt-3">Aucun locataire</h4>
+                <p class="text-muted">Ajoutez votre premier locataire pour commencer.</p>
+                <a href="{{ url_for('ajouter_locataire') }}" class="btn btn-primary">
+                    <i class="bi bi-person-plus"></i> Ajouter un locataire
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

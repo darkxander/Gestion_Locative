@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Paramètres - Gestion Locative{% endblock %}
+
+{% block content %}
+<h1 class="page-title"><i class="bi bi-gear"></i> Paramètres</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-person-badge"></i> Informations du bailleur
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">
+                    Ces informations apparaîtront sur les quittances de loyer.
+                </p>
+                
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="nom" class="form-label">Nom ou raison sociale *</label>
+                        <input type="text" class="form-control" id="nom" name="nom" 
+                               value="{{ bailleur.nom if bailleur else '' }}" 
+                               placeholder="Ex: Jean DUPONT ou SCI IMMOBILIERE" required>
+                        <small class="text-muted">Votre nom complet ou celui de votre société</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="adresse" class="form-label">Adresse *</label>
+                        <input type="text" class="form-control" id="adresse" name="adresse" 
+                               value="{{ bailleur.adresse if bailleur else '' }}" 
+                               placeholder="Ex: 12 rue de la République" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="code_postal" class="form-label">Code postal</label>
+                            <input type="text" class="form-control" id="code_postal" name="code_postal" 
+                                   value="{{ bailleur.code_postal if bailleur else '' }}" 
+                                   placeholder="75001">
+                        </div>
+                        
+                        <div class="col-md-8 mb-3">
+                            <label for="ville" class="form-label">Ville</label>
+                            <input type="text" class="form-control" id="ville" name="ville" 
+                                   value="{{ bailleur.ville if bailleur else '' }}" 
+                                   placeholder="Paris">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="telephone" class="form-label">Téléphone</label>
+                            <input type="tel" class="form-control" id="telephone" name="telephone" 
+                                   value="{{ bailleur.telephone if bailleur else '' }}" 
+                                   placeholder="01 23 45 67 89">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ bailleur.email if bailleur else '' }}" 
+                                   placeholder="contact@exemple.fr">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="siret" class="form-label">SIRET (optionnel)</label>
+                        <input type="text" class="form-control" id="siret" name="siret" 
+                               value="{{ bailleur.siret if bailleur else '' }}" 
+                               placeholder="123 456 789 00012">
+                        <small class="text-muted">Si vous êtes une société</small>
+                    </div>
+                    
+                    <hr>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> {{ 'Mettre à jour' if bailleur else 'Enregistrer' }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Informations
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary"><i class="bi bi-check-circle"></i> Quittances de loyer</h6>
+                <p class="small text-muted mb-3">
+                    Vos coordonnées apparaîtront sur toutes les quittances générées pour vos locataires.
+                </p>
+                
+                <h6 class="text-primary"><i class="bi bi-shield-check"></i> Confidentialité</h6>
+                <p class="small text-muted mb-3">
+                    Ces informations sont stockées localement sur votre ordinateur dans la base de données.
+                </p>
+                
+                <h6 class="text-primary"><i class="bi bi-lightbulb"></i> Conseil</h6>
+                <p class="small text-muted mb-0">
+                    Remplissez au minimum votre nom et votre adresse pour que les quittances soient valides.
+                </p>
+            </div>
+        </div>
+        
+        {% if bailleur %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <i class="bi bi-eye"></i> Aperçu
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>{{ bailleur.nom }}</strong></p>
+                <p class="mb-1 small">{{ bailleur.adresse_complete }}</p>
+                {% if bailleur.telephone %}
+                <p class="mb-1 small"><i class="bi bi-telephone"></i> {{ bailleur.telephone }}</p>
+                {% endif %}
+                {% if bailleur.email %}
+                <p class="mb-1 small"><i class="bi bi-envelope"></i> {{ bailleur.email }}</p>
+                {% endif %}
+                {% if bailleur.siret %}
+                <p class="mb-0 small">SIRET: {{ bailleur.siret }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
