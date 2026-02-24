@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Statistiques - Gestion Locative{% endblock %}
+{% block title %}Statistiques {{ annee }} - Gestion Locative{% endblock %}
 
 {% block content %}
 <h1 class="page-title"><i class="bi bi-bar-chart"></i> Statistiques</h1>
@@ -9,40 +9,45 @@
     <!-- Graphique des revenus -->
     <div class="col-md-8">
         <div class="card mb-4">
-            <div class="card-header">
-                <i class="bi bi-graph-up"></i> Évolution des revenus (12 derniers mois)
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-graph-up"></i> Revenus par bien</span>
+                <select id="selectAnnee" class="form-select form-select-sm" style="width: auto;">
+                    {% for a in annees_disponibles %}
+                        <option value="{{ a }}" {{ 'selected' if a == annee }}>{{ a }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="card-body">
                 <canvas id="revenusChart" height="100"></canvas>
             </div>
         </div>
     </div>
-    
+
     <!-- Résumé -->
     <div class="col-md-4">
         <div class="card mb-4">
             <div class="card-header">
-                <i class="bi bi-calculator"></i> Résumé annuel
+                <i class="bi bi-calculator"></i> Résumé {{ annee }}
             </div>
             <div class="card-body">
                 {% set total_annuel = revenus_mensuels|sum(attribute='total') %}
                 <div class="text-center mb-4">
-                    <h2 class="text-primary">{{ "%.2f"|format(total_annuel) }} €</h2>
-                    <p class="text-muted">Total perçu sur 12 mois</p>
+                    <h2 class="text-primary">{{ "%.2f"|format(total_annuel) }} &euro;</h2>
+                    <p class="text-muted">Total perçu en {{ annee }}</p>
                 </div>
-                
+
                 <hr>
-                
+
                 <div class="d-flex justify-content-between mb-2">
                     <span>Moyenne mensuelle :</span>
-                    <strong>{{ "%.2f"|format(total_annuel / 12) }} €</strong>
+                    <strong>{{ "%.2f"|format(total_annuel / 12) }} &euro;</strong>
                 </div>
-                
+
                 <div class="d-flex justify-content-between mb-2">
                     <span>Nombre de biens :</span>
                     <strong>{{ biens_stats|length }}</strong>
                 </div>
-                
+
                 {% set locataires_actifs = biens_stats|selectattr('locataire')|list|length %}
                 <div class="d-flex justify-content-between mb-2">
                     <span>Taux d'occupation :</span>
@@ -87,15 +92,15 @@
                                 {% if stat.locataire %}
                                 <tr>
                                     <td>Loyer mensuel :</td>
-                                    <td><strong>{{ stat.locataire.loyer_total }} €</strong></td>
+                                    <td><strong>{{ stat.locataire.loyer_total }} &euro;</strong></td>
                                 </tr>
                                 <tr>
                                     <td>Total perçu :</td>
-                                    <td><strong class="text-success">{{ "%.2f"|format(stat.total_percu) }} €</strong></td>
+                                    <td><strong class="text-success">{{ "%.2f"|format(stat.total_percu) }} &euro;</strong></td>
                                 </tr>
                                 {% endif %}
                             </table>
-                            
+
                             {% if stat.locataire %}
                                 <div class="progress" style="height: 8px;">
                                     {% set pct = (stat.total_percu / (stat.locataire.loyer_total * 12) * 100) if stat.locataire else 0 %}
@@ -114,37 +119,69 @@
 
 {% block scripts %}
 <script>
-    // Données pour le graphique
-    const mois = [{% for r in revenus_mensuels %}'{{ r.mois }}'{% if not loop.last %}, {% endif %}{% endfor %}];
-    const revenus = [{% for r in revenus_mensuels %}{{ r.total }}{% if not loop.last %}, {% endif %}{% endfor %}];
-    
-    // Création du graphique
-    const ctx = document.getElementById('revenusChart').getContext('2d');
+    // Sélecteur d'année → recharge la page
+    document.getElementById('selectAnnee').addEventListener('change', function() {
+        window.location.href = '{{ url_for("statistiques") }}?annee=' + this.value;
+    });
+
+    // Palette de couleurs par bien
+    var COULEURS = [
+        {bg: 'rgba(155, 89, 182, 0.7)', border: '#9b59b6'},
+        {bg: 'rgba(230, 126, 34, 0.7)', border: '#e67e22'},
+        {bg: 'rgba(52, 152, 219, 0.7)', border: '#3498db'},
+        {bg: 'rgba(46, 204, 113, 0.7)', border: '#2ecc71'},
+        {bg: 'rgba(231, 76, 60, 0.7)',  border: '#e74c3c'},
+        {bg: 'rgba(241, 196, 15, 0.7)', border: '#f1c40f'}
+    ];
+
+    // Labels des mois
+    var moisLabels = [{% for l in mois_labels %}'{{ l }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+    var moisKeys = [{% for k in mois_keys %}'{{ k }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+
+    // Un dataset par bien
+    var datasets = [];
+    {% for bien in biens_list %}
+    (function() {
+        var idx = {{ loop.index0 }} % COULEURS.length;
+        var revenusBien = {{ revenus_par_bien[bien.id]['mois'] | tojson }};
+        var data = [];
+        for (var i = 0; i < moisKeys.length; i++) {
+            data.push(revenusBien[moisKeys[i]] || 0);
+        }
+        datasets.push({
+            label: '{{ bien.nom }}',
+            data: data,
+            backgroundColor: COULEURS[idx].bg,
+            borderColor: COULEURS[idx].border,
+            borderWidth: 1
+        });
+    })();
+    {% endfor %}
+
+    // Graphique empilé
+    var ctx = document.getElementById('revenusChart').getContext('2d');
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: mois,
-            datasets: [{
-                label: 'Revenus (€)',
-                data: revenus,
-                backgroundColor: 'rgba(52, 152, 219, 0.7)',
-                borderColor: 'rgba(52, 152, 219, 1)',
-                borderWidth: 1
-            }]
+            labels: moisLabels,
+            datasets: datasets
         },
         options: {
             responsive: true,
             plugins: {
                 legend: {
-                    display: false
+                    display: true,
+                    position: 'top'
                 }
             },
             scales: {
+                x: { stacked: true },
                 y: {
+                    stacked: true,
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return value + ' €';
+                            return value + ' \u20ac';
                         }
                     }
                 }

@@ -636,26 +636,68 @@ def _register_routes(app):
     def statistiques():
         date_courante = date.today()
 
-        date_12_mois = date_courante - relativedelta(months=12)
-        mois_min = date_12_mois.strftime('%Y-%m')
+        # Année sélectionnée (défaut = année courante)
+        annee = _safe_int(request.args.get('annee'), date_courante.year)
 
-        revenus_bruts = db.session.query(
-            Paiement.mois_concerne,
-            func.sum(Paiement.montant)
-        ).filter(Paiement.mois_concerne >= mois_min).group_by(
-            Paiement.mois_concerne
+        # Années disponibles (celles qui ont des paiements + année courante)
+        annees_db = db.session.query(
+            func.distinct(func.substr(Paiement.mois_concerne, 1, 4))
         ).all()
-        revenus_dict = dict(revenus_bruts)
+        annees_disponibles = sorted(set(
+            [int(a[0]) for a in annees_db if a[0]] + [date_courante.year]
+        ), reverse=True)
 
+        # Revenus par bien et par mois pour l'année sélectionnée
+        mois_min = f'{annee}-01'
+        mois_max = f'{annee}-12'
+
+        revenus_par_bien_bruts = db.session.query(
+            Paiement.mois_concerne,
+            Bien.id,
+            Bien.nom,
+            Bien.type_bien,
+            func.sum(Paiement.montant)
+        ).join(Locataire, Paiement.locataire_id == Locataire.id
+        ).join(Bien, Locataire.bien_id == Bien.id
+        ).filter(
+            Paiement.mois_concerne >= mois_min,
+            Paiement.mois_concerne <= mois_max
+        ).group_by(Paiement.mois_concerne, Bien.id).all()
+
+        # Construire la structure pour le template
+        biens_list = Bien.query.order_by(Bien.id).all()
+
+        revenus_par_bien = {}
+        for bien in biens_list:
+            revenus_par_bien[bien.id] = {
+                'nom': bien.nom,
+                'type_bien': bien.type_bien,
+                'mois': {}
+            }
+        for mois_c, bien_id, nom, type_bien, total in revenus_par_bien_bruts:
+            if bien_id in revenus_par_bien:
+                revenus_par_bien[bien_id]['mois'][mois_c] = float(total or 0)
+
+        # Labels des 12 mois de l'année
+        mois_labels = []
+        mois_keys = []
+        for m in range(1, 13):
+            mois_labels.append(MOIS_NOMS_COURTS[m])
+            mois_keys.append(f'{annee}-{m:02d}')
+
+        # Revenus mensuels globaux (pour le résumé)
         revenus_mensuels = []
-        for i in range(11, -1, -1):
-            mois_date = date_courante - relativedelta(months=i)
-            mois_str = mois_date.strftime('%Y-%m')
+        for i, mois_str in enumerate(mois_keys):
+            total = sum(
+                revenus_par_bien[bid]['mois'].get(mois_str, 0)
+                for bid in revenus_par_bien
+            )
             revenus_mensuels.append({
-                'mois': MOIS_NOMS_COURTS[mois_date.month] + ' ' + str(mois_date.year),
-                'total': revenus_dict.get(mois_str, 0) or 0
+                'mois': mois_labels[i],
+                'total': total
             })
 
+        # Stats par bien (occupancy, totaux)
         biens_stats = []
         biens = Bien.query.options(joinedload(Bien.locataires)).all()
 
@@ -674,6 +716,12 @@ def _register_routes(app):
             })
 
         return render_template('statistiques.html',
+                             annee=annee,
+                             annees_disponibles=annees_disponibles,
+                             mois_labels=mois_labels,
+                             mois_keys=mois_keys,
+                             biens_list=biens_list,
+                             revenus_par_bien=revenus_par_bien,
                              revenus_mensuels=revenus_mensuels,
                              biens_stats=biens_stats)
 
