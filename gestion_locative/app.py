@@ -333,8 +333,8 @@ def _register_routes(app):
                 if p.categorie == 'loyer'
             )
 
-            # Période : du début du bail (max 12 mois en arrière) jusqu'au mois actuel
-            debut = max(loc.date_debut_bail, (aujourd_hui - relativedelta(months=12)).replace(day=1))
+            # Période : du début du bail jusqu'au mois actuel
+            debut = loc.date_debut_bail
             mois_cursor = date(debut.year, debut.month, 1)
             mois_fin = date(aujourd_hui.year, aujourd_hui.month, 1)
 
