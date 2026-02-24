@@ -23,18 +23,41 @@
 </div>
 
 <div class="row">
-    <!-- Informations personnelles -->
+    <!-- Informations du locataire -->
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-header">
-                <i class="bi bi-person-badge"></i> Informations personnelles
+                {% if locataire.est_professionnel %}
+                    <i class="bi bi-building"></i> Informations entreprise
+                {% else %}
+                    <i class="bi bi-person-badge"></i> Informations personnelles
+                {% endif %}
             </div>
             <div class="card-body">
                 <table class="table table-borderless">
+                    {% if locataire.est_professionnel %}
+                    <tr>
+                        <th width="40%">Raison sociale</th>
+                        <td>{{ locataire.raison_sociale }}</td>
+                    </tr>
+                    <tr>
+                        <th>SIRET</th>
+                        <td>{{ locataire.siret or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Dirigeant</th>
+                        <td>{{ locataire.dirigeant or '-' }}</td>
+                    </tr>
+                    {% else %}
                     <tr>
                         <th width="40%">Nom complet</th>
                         <td>{{ locataire.nom_complet }}</td>
                     </tr>
+                    <tr>
+                        <th>Date de naissance</th>
+                        <td>{{ locataire.date_naissance.strftime('%d/%m/%Y') if locataire.date_naissance else '-' }}</td>
+                    </tr>
+                    {% endif %}
                     <tr>
                         <th>Email</th>
                         <td>
@@ -54,10 +77,6 @@
                                 -
                             {% endif %}
                         </td>
-                    </tr>
-                    <tr>
-                        <th>Date de naissance</th>
-                        <td>{{ locataire.date_naissance.strftime('%d/%m/%Y') if locataire.date_naissance else '-' }}</td>
                     </tr>
                 </table>
             </div>

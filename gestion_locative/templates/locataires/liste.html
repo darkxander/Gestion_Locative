@@ -29,9 +29,13 @@
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center">
-                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" 
+                                    <div class="{{ 'bg-warning' if loc.est_professionnel else 'bg-primary' }} text-white rounded-circle d-flex align-items-center justify-content-center me-2"
                                          style="width: 35px; height: 35px; font-size: 0.8rem;">
-                                        {{ loc.prenom[0] }}{{ loc.nom[0] }}
+                                        {% if loc.est_professionnel %}
+                                            <i class="bi bi-building"></i>
+                                        {% else %}
+                                            {{ loc.prenom[0] }}{{ loc.nom[0] }}
+                                        {% endif %}
                                     </div>
                                     <div>
                                         <strong>{{ loc.nom_complet }}</strong><br>

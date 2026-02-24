@@ -92,10 +92,13 @@ def _parse_bien_form(form):
 def _parse_locataire_form(form):
     return {
         'nom': form.get('nom', '').strip(),
-        'prenom': form.get('prenom', '').strip(),
+        'prenom': form.get('prenom', '').strip() or None,
         'email': form.get('email', ''),
         'telephone': form.get('telephone', ''),
         'date_naissance': _safe_date(form.get('date_naissance')),
+        'raison_sociale': form.get('raison_sociale', '').strip() or None,
+        'siret': form.get('siret', '').strip() or None,
+        'dirigeant': form.get('dirigeant', '').strip() or None,
         'bien_id': _safe_int(form.get('bien_id')),
         'date_debut_bail': _safe_date(form.get('date_debut_bail')),
         'date_fin_bail': _safe_date(form.get('date_fin_bail')),
@@ -106,10 +109,27 @@ def _parse_locataire_form(form):
 
 
 def _validate_locataire_data(data):
-    if not data['nom'] or not data['prenom']:
-        return 'Le nom et le prénom sont obligatoires.'
     if not data['bien_id']:
         return 'Veuillez sélectionner un bien.'
+
+    # Déterminer le type de bien pour adapter la validation
+    bien = Bien.query.get(data['bien_id'])
+    if not bien:
+        return 'Le bien sélectionné est introuvable.'
+
+    if bien.type_bien == 'local_commercial':
+        # Validation locataire professionnel
+        if not data.get('raison_sociale'):
+            return 'La raison sociale est obligatoire pour un local commercial.'
+        if not data.get('siret'):
+            return 'Le numéro SIRET est obligatoire pour un local commercial.'
+        if len(data['siret']) != 14 or not data['siret'].isdigit():
+            return 'Le numéro SIRET doit contenir exactement 14 chiffres.'
+    else:
+        # Validation locataire particulier
+        if not data['nom'] or not data.get('prenom'):
+            return 'Le nom et le prénom sont obligatoires.'
+
     if not data['date_debut_bail']:
         return 'La date de début de bail est obligatoire.'
     if data['loyer_mensuel'] is None or data['loyer_mensuel'] < 0:
@@ -175,10 +195,15 @@ class Bien(db.Model):
 class Locataire(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nom = db.Column(db.String(100), nullable=False)
-    prenom = db.Column(db.String(100), nullable=False)
+    prenom = db.Column(db.String(100))
     email = db.Column(db.String(120))
     telephone = db.Column(db.String(20))
     date_naissance = db.Column(db.Date)
+
+    # Champs spécifiques locataire professionnel (local commercial)
+    raison_sociale = db.Column(db.String(200))
+    siret = db.Column(db.String(14))
+    dirigeant = db.Column(db.String(200))
 
     bien_id = db.Column(db.Integer, db.ForeignKey('bien.id'), nullable=False)
     date_debut_bail = db.Column(db.Date, nullable=False)
@@ -191,11 +216,19 @@ class Locataire(db.Model):
     paiements = db.relationship('Paiement', backref='locataire', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
+        if self.raison_sociale:
+            return f'<Locataire {self.raison_sociale}>'
         return f'<Locataire {self.prenom} {self.nom}>'
 
     @property
     def nom_complet(self):
+        if self.raison_sociale:
+            return self.raison_sociale
         return f'{self.prenom} {self.nom}'
+
+    @property
+    def est_professionnel(self):
+        return bool(self.raison_sociale)
 
     @property
     def loyer_total(self):
@@ -639,10 +672,30 @@ def _register_routes(app):
 
 # ==================== INITIALISATION ====================
 
+def _migrate_db():
+    """Ajoute les colonnes manquantes pour les mises à jour."""
+    from sqlalchemy import inspect, text
+    inspector = inspect(db.engine)
+    if 'locataire' in inspector.get_table_names():
+        colonnes = [col['name'] for col in inspector.get_columns('locataire')]
+        migrations = {
+            'raison_sociale': 'VARCHAR(200)',
+            'siret': 'VARCHAR(14)',
+            'dirigeant': 'VARCHAR(200)',
+        }
+        for col_name, col_type in migrations.items():
+            if col_name not in colonnes:
+                db.session.execute(text(
+                    f'ALTER TABLE locataire ADD COLUMN {col_name} {col_type}'
+                ))
+        db.session.commit()
+
+
 def init_db(app):
     """Initialise la base de données."""
     with app.app_context():
         db.create_all()
+        _migrate_db()
 
         if Bien.query.first() is None:
             appartement = Bien(
