@@ -323,11 +323,41 @@ def _register_routes(app):
         paiements_mois = Paiement.query.filter_by(mois_concerne=mois_actuel).all()
         total_percu = sum(p.montant for p in paiements_mois)
 
+        # Calculer les mois impayés pour chaque locataire actif
+        aujourd_hui = date.today()
         loyers_en_retard = []
         for loc in locataires_actifs:
-            if not any(p.mois_concerne == mois_actuel for p in loc.paiements):
-                if date.today().day > loc.jour_paiement:
-                    loyers_en_retard.append(loc)
+            # Mois avec un paiement de loyer
+            mois_payes = set(
+                p.mois_concerne for p in loc.paiements
+                if p.categorie == 'loyer'
+            )
+
+            # Période : du début du bail (max 12 mois en arrière) jusqu'au mois actuel
+            debut = max(loc.date_debut_bail, (aujourd_hui - relativedelta(months=12)).replace(day=1))
+            mois_cursor = date(debut.year, debut.month, 1)
+            mois_fin = date(aujourd_hui.year, aujourd_hui.month, 1)
+
+            mois_impayes = []
+            while mois_cursor <= mois_fin:
+                mois_str = mois_cursor.strftime('%Y-%m')
+                # Le mois courant n'est en retard que si le jour de paiement est passé
+                if mois_cursor == mois_fin and aujourd_hui.day <= loc.jour_paiement:
+                    break
+                if mois_str not in mois_payes:
+                    mois_impayes.append(mois_str)
+                mois_cursor += relativedelta(months=1)
+
+            if mois_impayes:
+                loyers_en_retard.append({
+                    'locataire': loc,
+                    'nb_mois': len(mois_impayes),
+                    'montant_du': len(mois_impayes) * loc.loyer_total,
+                    'mois_impayes': mois_impayes,
+                })
+
+        # Trier : les plus en retard en premier
+        loyers_en_retard.sort(key=lambda x: x['nb_mois'], reverse=True)
 
         return render_template('index.html',
                              biens=biens,

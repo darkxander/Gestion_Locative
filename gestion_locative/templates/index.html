@@ -63,17 +63,33 @@
             </div>
             <div class="card-body">
                 {% if loyers_en_retard %}
-                    {% for loc in loyers_en_retard %}
-                        <div class="alert alert-retard d-flex justify-content-between align-items-center mb-2">
+                    {% for retard in loyers_en_retard %}
+                        <div class="alert alert-retard d-flex justify-content-between align-items-center mb-2"
+                             style="border-left-color: {{ '#e74c3c' if retard.nb_mois >= 2 else '#f39c12' }};">
                             <div>
-                                <strong>{{ loc.nom_complet }}</strong><br>
-                                <small class="text-muted">{{ loc.bien.nom }} - {{ loc.loyer_total }} €</small>
+                                <strong>{{ retard.locataire.nom_complet }}</strong>
+                                <span class="badge {{ 'bg-danger' if retard.nb_mois >= 2 else 'bg-warning text-dark' }} ms-1">
+                                    {{ retard.nb_mois }} mois
+                                </span>
+                                <br>
+                                <small class="text-muted">
+                                    {{ retard.locataire.bien.nom }} &mdash;
+                                    <strong class="text-danger">{{ "%.2f"|format(retard.montant_du) }} &euro; dus</strong>
+                                </small>
                             </div>
                             <a href="{{ url_for('ajouter_paiement') }}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-plus"></i> Enregistrer
                             </a>
                         </div>
                     {% endfor %}
+                    {% if loyers_en_retard|length > 1 %}
+                        <div class="mt-2 p-2 bg-light rounded text-center">
+                            <strong class="text-danger">
+                                {{ loyers_en_retard|length }} locataires en retard
+                                &mdash; Total : {{ "%.2f"|format(loyers_en_retard|sum(attribute='montant_du')) }} &euro;
+                            </strong>
+                        </div>
+                    {% endif %}
                 {% else %}
                     <p class="text-muted text-center mb-0">
                         <i class="bi bi-check-circle text-success"></i> Tous les loyers sont à jour !
