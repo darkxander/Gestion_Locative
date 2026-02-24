@@ -28,7 +28,7 @@
                 </thead>
                 <tbody>
                     {% for paiement in paiements %}
-                        <tr>
+                        <tr style="border-left: 4px solid {{ '#9b59b6' if paiement.locataire.bien.type_bien == 'appartement' else '#e67e22' }};">
                             <td>{{ paiement.date_paiement.strftime('%d/%m/%Y') }}</td>
                             <td>
                                 <a href="{{ url_for('detail_locataire', id=paiement.locataire.id) }}">
@@ -39,6 +39,11 @@
                                 <a href="{{ url_for('detail_bien', id=paiement.locataire.bien.id) }}">
                                     {{ paiement.locataire.bien.nom }}
                                 </a>
+                                {% if paiement.locataire.bien.type_bien == 'appartement' %}
+                                    <span class="badge badge-appartement">Appt</span>
+                                {% else %}
+                                    <span class="badge badge-local">Local</span>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if paiement.categorie == 'loyer' %}
