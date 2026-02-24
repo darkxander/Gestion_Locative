@@ -125,10 +125,18 @@ def _validate_locataire_data(data):
             return 'Le numéro SIRET est obligatoire pour un local commercial.'
         if len(data['siret']) != 14 or not data['siret'].isdigit():
             return 'Le numéro SIRET doit contenir exactement 14 chiffres.'
+        # Garantir la compatibilité DB (nom NOT NULL dans les anciennes bases)
+        data['nom'] = data['raison_sociale']
+        if not data.get('prenom'):
+            data['prenom'] = ''
     else:
         # Validation locataire particulier
         if not data['nom'] or not data.get('prenom'):
             return 'Le nom et le prénom sont obligatoires.'
+        # Nettoyer les champs pro si on est en mode particulier
+        data['raison_sociale'] = None
+        data['siret'] = None
+        data['dirigeant'] = None
 
     if not data['date_debut_bail']:
         return 'La date de début de bail est obligatoire.'
